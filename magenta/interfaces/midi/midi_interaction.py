@@ -107,7 +107,7 @@ class MidiInteraction(threading.Thread):
     return self._default_qpm if val is None else val + self._BASE_QPM
 
   @property
-  def _temperature(self, min_temp=0.1, max_temp=2.0, default=1.0):
+  def _temperature(self, min_temp=0.1, max_temp=2.0, default=1.0, temperature=None):
     """Returns the temperature based on the current control value.
 
     Linearly interpolates between `min_temp` and `max_temp`.
@@ -121,10 +121,13 @@ class MidiInteraction(threading.Thread):
     Returns:
       A float temperature value based on the 8-bit MIDI control value.
     """
-    val = self._midi_hub.control_value(self._temperature_control_number)
-    if val is None:
+    if temperature:
+      assert min_temp <= temperature <= max_temp, "Temperature must be between 0.1 and 2. You passed in {}".format(temperature)
+      return temperature
+    # val = self._midi_hub.control_value(self._temperature_control_number)
+    if temperature is None:
       return default
-    return min_temp + (val / 127.) * (max_temp - min_temp)
+    # return min_temp + (val / 127.) * (max_temp - min_temp)
 
   @abc.abstractmethod
   def run(self):
@@ -237,8 +240,9 @@ class CallAndResponseMidiInteraction(MidiInteraction):
                response_ticks_control_number=None,
                tempo_control_number=None,
                temperature_control_number=None,
-               loop_control_number=None,
-               state_control_number=None):
+               loop_control_number=1,
+               state_control_number=None,
+               temperature=None):
     super(CallAndResponseMidiInteraction, self).__init__(
         midi_hub, sequence_generators, qpm, generator_select_control_number,
         tempo_control_number, temperature_control_number)
@@ -257,6 +261,7 @@ class CallAndResponseMidiInteraction(MidiInteraction):
     self._response_ticks_control_number = response_ticks_control_number
     self._loop_control_number = loop_control_number
     self._state_control_number = state_control_number
+    self._fixed_temperature = temperature
     # Event for signalling when to end a call.
     self._end_call = threading.Event()
     # Event for signalling when to flush playback sequence.
@@ -302,10 +307,17 @@ class CallAndResponseMidiInteraction(MidiInteraction):
   @property
   def _should_loop(self):
     return (self._loop_control_number and
-            self._midi_hub.control_value(self._loop_control_number) == 127)
+            self._midi_hub.control_value(self._loop_control_number) > 0)
 
   def _generate(self, input_sequence, zero_time, response_start_time,
                 response_end_time):
+    print("*" * 150)
+    print('In the _generate sequence of the midi interaction code')
+    print()
+    print('response start time: {}'.format(response_start_time))
+    print()
+    print('response end time: {}'.format(response_end_time))
+    print()
     """Generates a response sequence with the currently-selected generator.
 
     Args:
@@ -321,6 +333,14 @@ class CallAndResponseMidiInteraction(MidiInteraction):
     # Generation is simplified if we always start at 0 time.
     response_start_time -= zero_time
     response_end_time -= zero_time
+    print('Old end time: {}'.format(response_end_time))
+
+    time_delta = response_end_time - response_start_time
+    print('Time delta: {}'.format(time_delta))
+    new_delta = time_delta * 4
+    print('New time delta: {}'.format(new_delta))
+    new_end_time = response_start_time + new_delta
+    print('new end time {}'.format(new_end_time))
 
     generator_options = generator_pb2.GeneratorOptions()
     generator_options.input_sections.add(
@@ -328,10 +348,10 @@ class CallAndResponseMidiInteraction(MidiInteraction):
         end_time=response_start_time)
     generator_options.generate_sections.add(
         start_time=response_start_time,
-        end_time=response_end_time)
+        end_time=new_end_time)
 
     # Get current temperature setting.
-    generator_options.args['temperature'].float_value = self._temperature
+    generator_options.args['temperature'].float_value = self._fixed_temperature
 
     # Generate response.
     tf.logging.info(

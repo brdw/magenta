@@ -161,6 +161,9 @@ tf.app.flags.DEFINE_string(
     'log', 'WARN',
     'The threshold for what messages will be logged. DEBUG, INFO, WARN, ERROR, '
     'or FATAL.')
+tf.app.flags.DEFINE_float(
+    'fixed_temperature', 1.0,
+    'The temperature you want for the model ')
 
 _CONTROL_FLAGS = [
     'clock_control_number',
@@ -373,7 +376,8 @@ def main(unused_argv):
       tempo_control_number=control_map['tempo'],
       temperature_control_number=control_map['temperature'],
       loop_control_number=control_map['loop'],
-      state_control_number=control_map['state'])
+      state_control_number=control_map['state'],
+      temperature=FLAGS.fixed_temperature)
 
   _print_instructions()
 
