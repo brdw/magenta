@@ -244,7 +244,8 @@ class CallAndResponseMidiInteraction(MidiInteraction):
                loop_control_number=1,
                state_control_number=None,
                temperature=None,
-               response_length=None):
+               response_length=None,
+               looping=None):
     super(CallAndResponseMidiInteraction, self).__init__(
         midi_hub, sequence_generators, qpm, generator_select_control_number,
         tempo_control_number, temperature_control_number)
@@ -265,6 +266,7 @@ class CallAndResponseMidiInteraction(MidiInteraction):
     self._state_control_number = state_control_number
     self._fixed_temperature = temperature
     self._response_length = response_length
+    self._looping = looping
     # Event for signalling when to end a call.
     self._end_call = threading.Event()
     # Event for signalling when to flush playback sequence.
@@ -309,6 +311,8 @@ class CallAndResponseMidiInteraction(MidiInteraction):
 
   @property
   def _should_loop(self):
+    if self._looping:
+      return True
     return (self._loop_control_number and
             self._midi_hub.control_value(self._loop_control_number) > 0)
 

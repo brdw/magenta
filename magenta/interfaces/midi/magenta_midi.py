@@ -167,6 +167,10 @@ tf.app.flags.DEFINE_float(
 tf.app.flags.DEFINE_integer(
     'response_length', None,
     'Response length for model')
+tf.app.flags.DEFINE_boolean(
+    'looping',
+    False,
+    'Whether to loop. If this is set to True, we ignore `loop_control_number`')
 
 
 _CONTROL_FLAGS = [
@@ -382,7 +386,8 @@ def main(unused_argv):
       loop_control_number=control_map['loop'],
       state_control_number=control_map['state'],
       temperature=FLAGS.fixed_temperature,
-      response_length=FLAGS.response_length)
+      response_length=FLAGS.response_length,
+      looping=FLAGS.looping)
 
   _print_instructions()
 
