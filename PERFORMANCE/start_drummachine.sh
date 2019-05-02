@@ -8,4 +8,5 @@ magenta_midi \
 	--bundle_files="$MODEL_HOME/$MODEL"  \
 	--clock_control_number=$CLOCK_CONTROL_NUMBER \
 	--loop_control_number=64 \
+	--looping=true \
 	--log="DEBUG"

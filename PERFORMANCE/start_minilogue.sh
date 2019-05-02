@@ -7,6 +7,6 @@ magenta_midi \
 	--output_ports="minilogue SOUND" \
 	--bundle_files="$MODEL_HOME/$MODEL"  \
 	--clock_control_number=$CLOCK_CONTROL_NUMBER \
-	--fixed_temperature=1.80 \
+	--fixed_temperature=0.90 \
 	--response_length=8 \
 	--log="DEBUG"
