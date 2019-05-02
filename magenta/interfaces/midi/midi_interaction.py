@@ -33,6 +33,7 @@ def adjust_sequence_times(sequence, delta_time):
     note.start_time += delta_time
     note.end_time += delta_time
   retimed_sequence.total_time += delta_time
+  print("What is retimed_sequence.total_time? {}".format(retimed_sequence.total_time))
   return retimed_sequence
 
 
@@ -242,7 +243,8 @@ class CallAndResponseMidiInteraction(MidiInteraction):
                temperature_control_number=None,
                loop_control_number=1,
                state_control_number=None,
-               temperature=None):
+               temperature=None,
+               response_length=None):
     super(CallAndResponseMidiInteraction, self).__init__(
         midi_hub, sequence_generators, qpm, generator_select_control_number,
         tempo_control_number, temperature_control_number)
@@ -262,6 +264,7 @@ class CallAndResponseMidiInteraction(MidiInteraction):
     self._loop_control_number = loop_control_number
     self._state_control_number = state_control_number
     self._fixed_temperature = temperature
+    self._response_length = response_length
     # Event for signalling when to end a call.
     self._end_call = threading.Event()
     # Event for signalling when to flush playback sequence.
@@ -333,14 +336,14 @@ class CallAndResponseMidiInteraction(MidiInteraction):
     # Generation is simplified if we always start at 0 time.
     response_start_time -= zero_time
     response_end_time -= zero_time
-    print('Old end time: {}'.format(response_end_time))
-
-    time_delta = response_end_time - response_start_time
-    print('Time delta: {}'.format(time_delta))
-    new_delta = time_delta * 4
-    print('New time delta: {}'.format(new_delta))
-    new_end_time = response_start_time + new_delta
-    print('new end time {}'.format(new_end_time))
+    # print('Old end time: {}'.format(response_end_time))
+    #
+    # # time_delta = response_end_time - response_start_time
+    # # print('Time delta: {}'.format(time_delta))
+    # # new_delta = time_delta * 4
+    # # print('New time delta: {}'.format(new_delta))
+    # # new_end_time = response_start_time + new_delta
+    # # print('new end time {}'.format(new_end_time))
 
     generator_options = generator_pb2.GeneratorOptions()
     generator_options.input_sections.add(
@@ -348,7 +351,7 @@ class CallAndResponseMidiInteraction(MidiInteraction):
         end_time=response_start_time)
     generator_options.generate_sections.add(
         start_time=response_start_time,
-        end_time=new_end_time)
+        end_time=response_end_time)
 
     # Get current temperature setting.
     generator_options.args['temperature'].float_value = self._fixed_temperature
@@ -366,6 +369,8 @@ class CallAndResponseMidiInteraction(MidiInteraction):
         adjust_sequence_times(input_sequence, -zero_time), generator_options)
     response_sequence = magenta.music.trim_note_sequence(
         response_sequence, response_start_time, response_end_time)
+    # print('What is zero time? {}'.format(zero_time))
+    # print('What is response sequence? {}'.format(response_sequence))
     return adjust_sequence_times(response_sequence, zero_time)
 
   def run(self):
@@ -462,8 +467,7 @@ class CallAndResponseMidiInteraction(MidiInteraction):
             capture_start_time += tick_duration
 
           # Compute duration of response.
-          num_ticks = self._midi_hub.control_value(
-              self._response_ticks_control_number)
+          num_ticks = self._response_length
 
           if num_ticks:
             response_duration = num_ticks * tick_duration

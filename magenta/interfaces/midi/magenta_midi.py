@@ -164,6 +164,10 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_float(
     'fixed_temperature', 1.0,
     'The temperature you want for the model ')
+tf.app.flags.DEFINE_integer(
+    'response_length', None,
+    'Response length for model')
+
 
 _CONTROL_FLAGS = [
     'clock_control_number',
@@ -377,7 +381,8 @@ def main(unused_argv):
       temperature_control_number=control_map['temperature'],
       loop_control_number=control_map['loop'],
       state_control_number=control_map['state'],
-      temperature=FLAGS.fixed_temperature)
+      temperature=FLAGS.fixed_temperature,
+      response_length=FLAGS.response_length)
 
   _print_instructions()
 
