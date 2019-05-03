@@ -8,5 +8,6 @@ magenta_midi   \
 	--bundle_files="$MODEL_HOME/$MODEL"  \
 	--clock_control_number=$CLOCK_CONTROL_NUMBER \
 	--fixed_temperature 0.80 \
-	--response_length=4 \
+	--response_length=6 \
+	--looping=true \
 	--log="DEBUG"
